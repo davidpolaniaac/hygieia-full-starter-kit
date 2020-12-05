@@ -109,7 +109,7 @@ services:
     depends_on:
       - mongodb
     volumes:
-      - "./config/api:/var/app/config"
+      - "./config/exec-api:/var/app/config"
   exec-analysis:
     build:
       context: ExecDashboard/exec-analysis
@@ -120,7 +120,7 @@ services:
       - hygieia
       - exec-api
     volumes:
-      - "./config/analysis:/var/app/config"
+      - "./config/exec-analysis:/var/app/config"
 
 volumes:
   postgresql:
