@@ -1,0 +1,128 @@
+version: '3.4'
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+    volumes:
+      - postgresql:/var/lib/postgresql
+      - postgresql_data:/var/lib/postgresql/data
+  sonarqube:
+    image: sonarqube:8-community
+    depends_on:
+      - postgres
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    volumes:
+      - ./data/sonarqube:/opt/sonarqube/data
+      - ./logs/sonarqube:/opt/sonarqube/logs
+    healthcheck:
+      test: wget -qO- http://localhost:9000/api/system/status | grep -q '"status":"UP"'
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 5m
+  mongodb:
+    image: mongo:3.6
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/mongodb:/data/db
+  jenkins:
+    build: ./hygieia-starter-kit/jenkins
+    ports:
+      - "8888:8080"
+      - "50000:50000"
+    volumes:
+      - ./data/jenkins:/var/jenkins_home
+      - ./logs/jenkins:/var/jenkins_home/logs
+    healthcheck:
+      test: wget -qO- http://localhost:8080/api/json?tree=mode | grep -q '"NORMAL"'
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 5m
+    privileged: true
+  hygieia:
+    image: hygieiadoc/hygieia-starter-kit:latest
+    build: ./hygieia-starter-kit/hygieia-starter-kit
+    depends_on:
+      - mongodb
+      - sonarqube
+      - jenkins
+    ports:
+      - "80:80"
+      - "8080:8080"
+    environment: 
+      - PROXY_URL=
+      - PROXY_PORT=
+      - PROXY_USERNAME=
+      - PROXY_PASSWORD=
+#      - GITHUB_HOST=github.com
+#      - GITHUB_GRAPHQL_URL=
+#      - GITHUB_BASE_API_URL=
+      - GITHUB_CRON=0 1/5 * * * *
+       #See https://hygieia.github.io/Hygieia/troubleshoot.html for how to get a personal access token
+      - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_TOKEN}
+      - JENKINS_CRON=0 2/5 * * * *
+      - JENKINS_SERVER= http://jenkins:8080/
+      - SONAR_CRON=0 3/5 * * * *
+      - SONAR_HOST=http://sonarqube:9000
+      - SONAR_VERSION=8.4
+      - SONAR_METRICS=ncloc,violations,new_vulnerabilities,critical_violations,major_violations,blocker_violations,tests,test_success_density,test_errors,test_failures,coverage,line_coverage,sqale_index,alert_status,quality_gate_details
+      - SONAR_USERNAME=
+      - SONAR_PASSWORD=
+    privileged: true
+    volumes:
+      - './logs:/hygieia/logs'
+  cmdb:
+    build: ./hygieia-cmdb-company-collector
+    depends_on:
+      - mongodb
+    environment:
+      - MONGODB_USERNAME=${MONGODB_USERNAME}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+      - APIKEY=${CMDB_TOKEN}
+      - PROJECTID=${CMDB_PROJECTID}
+      - ORGANIZATIONNAME=${CMDB_ORGANIZATIONNAME}
+      - PUBLISHER=davidpolaniaac
+    volumes:
+      - "./config/api:/var/app/config"
+  exec-ui:
+    build: ./ExecDashboard/exec-ui
+    ports:
+      - "4200:80"
+    depends_on:
+      - mongodb
+    environment:
+      - API_URL=http://exec-api:8080
+  exec-api:
+    build:
+      context: ExecDashboard/exec-api
+      args:
+        JAR_FILE: "./target/exec-api*.jar"
+    depends_on:
+      - mongodb
+    volumes:
+      - "./config/api:/var/app/config"
+  exec-analysis:
+    build:
+      context: ExecDashboard/exec-analysis
+      args:
+        JAR_FILE: "./target/exec-analysis*.jar"
+    depends_on:
+      - mongodb
+      - hygieia
+      - exec-api
+    volumes:
+      - "./config/analysis:/var/app/config"
+
+volumes:
+  postgresql:
+  postgresql_data:
+  

@@ -1,0 +1,9 @@
+[submodule "hygieia-starter-kit"]
+	path = hygieia-starter-kit
+	url = https://github.com/Hygieia/hygieia-starter-kit.git
+[submodule "ExecDashboard"]
+	path = ExecDashboard
+	url = https://github.com/Hygieia/ExecDashboard.git
+[submodule "hygieia-cmdb-company-collector"]
+	path = hygieia-cmdb-company-collector
+	url = https://github.com/davidpolaniaac/hygieia-cmdb-company-collector.git

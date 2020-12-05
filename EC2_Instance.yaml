@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Hygieia Full stater kit"
+
+############################## Parameters ####################################################
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t3.xlarge
+    AllowedValues:
+      [
+        t2.nano,
+        t2.micro,
+        t2.small,
+        t2.medium,
+        t2.large,
+        t2.xlarge,
+        t2.2xlarge,
+        t3.nano,
+        t3.micro,
+        t3.small,
+        t3.medium,
+        t3.large,
+        t3.xlarge,
+        t3.2xlarge,
+        m4.large,
+        m4.xlarge,
+        m4.2xlarge,
+        m4.4xlarge,
+        m4.10xlarge,
+        m5.large,
+        m5.xlarge,
+        m5.2xlarge,
+        m5.4xlarge,
+        c5.large,
+        c5.xlarge,
+        c5.2xlarge,
+        c5.4xlarge,
+        c5.9xlarge,
+        g3.8xlarge,
+        r5.large,
+        r5.xlarge,
+        r5.2xlarge,
+        r5.4xlarge,
+        r3.12xlarge,
+        i3.xlarge,
+        i3.2xlarge,
+        i3.4xlarge,
+        i3.8xlarge,
+        d2.xlarge,
+        d2.2xlarge,
+        d2.4xlarge,
+        d2.8xlarge,
+      ]
+    ConstraintDescription: must be a valid EC2 instance type.
+
+  SSHLocation:
+    Description: The IP address range that can be used to SSH to the EC2 instances
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    Default: 0.0.0.0/0
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  LatestAmiId:
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+
+  InstanceVolumeSize:
+    Description: Instance volume size
+    Type: Number
+    Default: 100
+
+  GitHubToken:
+    Description: Github personal access token
+    Type: String
+    NoEcho: true
+
+  AzureDevOpsToken:
+    Description: Azure DevOps personal access token
+    Type: String
+    NoEcho: true
+
+  AzureDevOpsProjectId:
+    Description: Azure DevOps project id
+    Type: String
+
+  AzureDevOpsOrganizationName:
+    Description: Azure DevOps organization name
+    Type: String
+
+######################################## Resources ######################################
+
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SG-hygieia-full-started-kit
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref "SSHLocation"
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref "InstanceType"
+      SecurityGroups: [!Ref "InstanceSecurityGroup"]
+      KeyName: !Ref "KeyName"
+      ImageId: !Ref "LatestAmiId"
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            VolumeSize: !Ref InstanceVolumeSize
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo su -
+          export GITHUB_TOKEN=${GitHubToken}
+          export CMDB_TOKEN=${AzureDevOpsToken}
+          export CMDB_PROJECTID=${AzureDevOpsProjectId}
+          export CMDB_ORGANIZATIONNAME=${AzureDevOpsOrganizationName}
+
+          yum update -y
+          yum install git -y
+          yum install maven -y
+          amazon-linux-extras install docker -y
+          yum install docker -y
+          service docker start
+          chkconfig docker on
+          usermod -a -G docker ec2-user
+          curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+          mkdir /hygieia
+          git clone --recursive https://github.com/davidpolaniaac/hygieia-full-starter-kit.git /hygieia
+          echo "GITHUB_TOKEN=$GITHUB_TOKEN
+          CMDB_TOKEN=$CMDB_TOKEN
+          CMDB_PROJECTID=$CMDB_PROJECTID
+          CMDB_ORGANIZATIONNAME=$CMDB_ORGANIZATIONNAME" >> /hygieia/.env
+          sh /hygieia/install.sh
+          chmod 777 -R /hygieia
+
+######################################## Outputs ######################################
+
+Outputs:
+  Instance:
+    Value: !GetAtt [EC2Instance, PublicDnsName]
+    Description: DNS Name of the newly created EC2 instance
