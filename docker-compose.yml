@@ -9,7 +9,7 @@ services:
       - postgresql:/var/lib/postgresql
       - postgresql_data:/var/lib/postgresql/data
   sonarqube:
-    image: sonarqube:8-community
+    image: sonarqube:8.2-community
     depends_on:
       - postgres
     ports:
