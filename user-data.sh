@@ -14,7 +14,8 @@ ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
 mkdir /hygieia
 git clone --recursive https://github.com/davidpolaniaac/hygieia-full-starter-kit.git /hygieia
-sh /hygieia/install.sh
+mvn -f /hygieia/ExecDashboard/pom.xml clean install package
+mvn -f /hygieia/hygieia-cmdb-company-collector/pom.xml clean install package
 echo "GITHUB_TOKEN=$GITHUB_TOKEN
 CMDB_TOKEN=$CMDB_TOKEN
 CMDB_PROJECTID=$CMDB_PROJECTID
