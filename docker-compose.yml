@@ -1,34 +1,22 @@
 version: '3.4'
 services:
   mongodb:
-    build: ./config/db-setup
+    image: mongo:latest
     ports:
-      - "27017:27017"
+      - "27000:27017"
     volumes:
-      - "mongo-data:/data/db"
-  postgres:
-    image: postgres
-    environment:
-      POSTGRES_USER: sonar
-      POSTGRES_PASSWORD: sonar
-    volumes:
-      - postgresql:/var/lib/postgresql
-      - postgresql_data:/var/lib/postgresql/data
-  sonarqube:
-    image: sonarqube:8.2-community
+      - "hygieia-data:/data/db"
+  db-setup:
+    build: ./config/db-setup
     depends_on:
-      - postgres
+      - mongodb
+  sonarqube:
+    image: sonarqube:8-community
     ports:
       - "9000:9000"
-    environment:
-      SONAR_JDBC_URL: jdbc:postgresql://postgres:5432/sonar
-      SONAR_JDBC_USERNAME: sonar
-      SONAR_JDBC_PASSWORD: sonar
     volumes:
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_extensions:/opt/sonarqube/extensions
-      - sonarqube_logs:/opt/sonarqube/logs
-      - sonarqube_temp:/opt/sonarqube/temp
+      - "sonarqube_data:/opt/sonarqube/data"
+      - "sonarqube_logs:/opt/sonarqube/logs"
     healthcheck:
       test: wget -qO- http://localhost:9000/api/system/status | grep -q '"status":"UP"'
       interval: 1m
@@ -54,7 +42,7 @@ services:
     image: hygieiadoc/hygieia-starter-kit:latest
     build: ./hygieia-starter-kit/hygieia-starter-kit
     depends_on:
-      - mongodb
+      - db-setup
       - sonarqube
       - jenkins
     ports:
@@ -85,7 +73,7 @@ services:
   cmdb:
     build: ./hygieia-cmdb-company-collector
     depends_on:
-      - mongodb
+      - db-setup
     environment:
       - APIKEY=${CMDB_TOKEN}
       - PROJECTID=${CMDB_PROJECTID}
@@ -98,7 +86,7 @@ services:
     ports:
       - "4200:80"
     depends_on:
-      - mongodb
+      - db-setup
     environment:
       - API_URL=http://exec-api:8080
   exec-api:
@@ -107,7 +95,7 @@ services:
       args:
         JAR_FILE: "./target/exec-api*.jar"
     depends_on:
-      - mongodb
+      - db-setup
     volumes:
       - "./config/exec-api:/var/app/config"
   exec-analysis:
@@ -116,7 +104,8 @@ services:
       args:
         JAR_FILE: "./target/exec-analysis*.jar"
     depends_on:
-      - mongodb
+      - db-setup
+      - cmdb
       - hygieia
       - exec-api
     volumes:
@@ -127,8 +116,4 @@ volumes:
   mongo-data:
   jenkins-data:
   sonarqube_data:
-  sonarqube_extensions:
   sonarqube_logs:
-  sonarqube_temp:
-  postgresql:
-  postgresql_data:
