@@ -1,5 +1,11 @@
 version: '3.4'
 services:
+  mongodb:
+    build: ./config/db-setup
+    ports:
+      - "27017:27017"
+    volumes:
+      - "mongo-data:/data/db"
   postgres:
     image: postgres
     environment:
@@ -19,28 +25,24 @@ services:
       SONAR_JDBC_USERNAME: sonar
       SONAR_JDBC_PASSWORD: sonar
     volumes:
-      - ./data/sonarqube:/opt/sonarqube/data
-      - ./logs/sonarqube:/opt/sonarqube/logs
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_temp:/opt/sonarqube/temp
     healthcheck:
       test: wget -qO- http://localhost:9000/api/system/status | grep -q '"status":"UP"'
       interval: 1m
       timeout: 10s
       retries: 3
       start_period: 5m
-  mongodb:
-    image: mongo:3.6
-    ports:
-      - "27017:27017"
-    volumes:
-      - ./data/mongodb:/data/db
   jenkins:
     build: ./hygieia-starter-kit/jenkins
     ports:
       - "8888:8080"
       - "50000:50000"
     volumes:
-      - ./data/jenkins:/var/jenkins_home
-      - ./logs/jenkins:/var/jenkins_home/logs
+      - "jenkins-data:/var/jenkins_home"
+      - "jenkins-data:/var/jenkins_home/logs"
     healthcheck:
       test: wget -qO- http://localhost:8080/api/json?tree=mode | grep -q '"NORMAL"'
       interval: 1m
@@ -79,20 +81,18 @@ services:
       - SONAR_PASSWORD=
     privileged: true
     volumes:
-      - './logs:/hygieia/logs'
+      - 'hygieia-data:/hygieia/logs'
   cmdb:
     build: ./hygieia-cmdb-company-collector
     depends_on:
       - mongodb
     environment:
-      - MONGODB_USERNAME=${MONGODB_USERNAME}
-      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
       - APIKEY=${CMDB_TOKEN}
       - PROJECTID=${CMDB_PROJECTID}
       - ORGANIZATIONNAME=${CMDB_ORGANIZATIONNAME}
       - PUBLISHER=davidpolaniaac
     volumes:
-      - "./config/api:/var/app/config"
+      - "hygieia-data:/hygieia/logs"
   exec-ui:
     build: ./ExecDashboard/exec-ui
     ports:
@@ -123,6 +123,12 @@ services:
       - "./config/exec-analysis:/var/app/config"
 
 volumes:
+  hygieia-data:
+  mongo-data:
+  jenkins-data:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  sonarqube_temp:
   postgresql:
   postgresql_data:
-  
