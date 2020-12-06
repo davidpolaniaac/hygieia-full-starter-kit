@@ -1,1 +1,0 @@
-  mongo db/admin < /tmp/db-setup.js
