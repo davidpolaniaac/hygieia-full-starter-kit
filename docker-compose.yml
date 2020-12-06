@@ -81,6 +81,8 @@ services:
       - PROJECTID=${CMDB_PROJECTID}
       - ORGANIZATIONNAME=${CMDB_ORGANIZATIONNAME}
       - PUBLISHER=davidpolaniaac
+    links:
+      - "mongodb:db"
     volumes:
       - "hygieia-data:/hygieia/logs"
   exec-ui:
