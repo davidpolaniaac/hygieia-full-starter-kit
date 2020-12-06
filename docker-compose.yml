@@ -10,6 +10,8 @@ services:
     build: ./config/db-setup
     depends_on:
       - mongodb
+    links:
+      - "mongodb:db"
   sonarqube:
     image: sonarqube:8-community
     ports:

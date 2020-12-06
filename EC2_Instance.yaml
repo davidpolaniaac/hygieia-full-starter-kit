@@ -150,7 +150,7 @@ Resources:
           CMDB_TOKEN=$CMDB_TOKEN
           CMDB_PROJECTID=$CMDB_PROJECTID
           CMDB_ORGANIZATIONNAME=$CMDB_ORGANIZATIONNAME" >> /hygieia/.env
-
+          cd /hygieia && docker-compose up -d --build
 ######################################## Outputs ######################################
 
 Outputs:
