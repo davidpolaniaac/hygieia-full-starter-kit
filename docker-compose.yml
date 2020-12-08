@@ -18,7 +18,7 @@ services:
       - "9000:9000"
     environment:
       - sonar.jdbc.username=sonar
-      - sonar.jdbc.password=
+      - sonar.jdbc.password=sonar
       - sonar.jdbc.url=jdbc:postgresql://postgres:5432/sonar
     volumes:
       - sonarqube_conf:/opt/sonarqube/conf
@@ -41,7 +41,7 @@ services:
     image: postgres
     environment:
       - POSTGRES_USER=sonar
-      - POSTGRES_PASSWORD=
+      - POSTGRES_PASSWORD=sonar
     volumes:
       - postgresql:/var/lib/postgresql
       - postgresql_data:/var/lib/postgresql/data
