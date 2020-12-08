@@ -97,7 +97,7 @@ services:
     depends_on:
       - db-setup
     environment:
-      - APIKEY=${CMDB_TOKEN}
+      - CMDB_PERSONAL_ACCESS_TOKEN=${CMDB_TOKEN}
       - PROJECTID=${CMDB_PROJECTID}
       - ORGANIZATIONNAME=${CMDB_ORGANIZATIONNAME}
       - PUBLISHER=davidpolaniaac
