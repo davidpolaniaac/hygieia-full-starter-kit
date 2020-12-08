@@ -5,8 +5,13 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - "./config/db-setup/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro"
       - "hygieia-data:/data/db"
+  db-setup:
+    build: "./config/db-setup"
+    depends_on:
+      - mongodb
+    links:
+      - "mongodb:db"
   sonarqube:
     image: sonarqube:8-community
     ports:
@@ -39,7 +44,7 @@ services:
     image: hygieiadoc/hygieia-starter-kit:latest
     build: ./hygieia-starter-kit/hygieia-starter-kit
     depends_on:
-      - mongodb
+      - db-setup
       - sonarqube
       - jenkins
     ports:
@@ -70,7 +75,7 @@ services:
   cmdb:
     build: ./hygieia-cmdb-company-collector
     depends_on:
-      - mongodb
+      - db-setup
     environment:
       - APIKEY=${CMDB_TOKEN}
       - PROJECTID=${CMDB_PROJECTID}
@@ -85,7 +90,7 @@ services:
     ports:
       - "4200:80"
     depends_on:
-      - mongodb
+      - exec-api
     environment:
       - API_URL=http://exec-api:8080
   exec-api:
@@ -94,7 +99,7 @@ services:
       args:
         JAR_FILE: "./target/exec-api*.jar"
     depends_on:
-      - mongodb
+      - db-setup
     volumes:
       - "./config/exec-api:/var/app/config"
   exec-analysis:
@@ -103,16 +108,13 @@ services:
       args:
         JAR_FILE: "./target/exec-analysis*.jar"
     depends_on:
-      - mongodb
+      - db-setup
       - cmdb
       - hygieia
-      - exec-api
     volumes:
       - "./config/exec-analysis:/var/app/config"
-
 volumes:
   hygieia-data:
-  mongo-data:
   jenkins-data:
   sonarqube_data:
   sonarqube_logs:

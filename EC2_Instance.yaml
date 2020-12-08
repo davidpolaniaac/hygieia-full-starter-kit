@@ -130,7 +130,7 @@ Resources:
           export CMDB_PROJECTID=${AzureDevOpsProjectId}
           export CMDB_ORGANIZATIONNAME=${AzureDevOpsOrganizationName}
 
-          yum update -y
+          yum update -y aws-cfn-bootstrap
           yum install git -y
           yum install maven -y
           amazon-linux-extras install docker -y
@@ -151,6 +151,15 @@ Resources:
           CMDB_PROJECTID=$CMDB_PROJECTID
           CMDB_ORGANIZATIONNAME=$CMDB_ORGANIZATIONNAME" >> /hygieia/.env
           cd /hygieia && docker-compose up -d --build
+          # Start cfn-signal to the wait condition
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource WaitCondition --region ${AWS::Region}
+  
+  WaitCondition:
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT10M
+        Count: 1
+    Type: AWS::CloudFormation::WaitCondition
 ######################################## Outputs ######################################
 
 Outputs:

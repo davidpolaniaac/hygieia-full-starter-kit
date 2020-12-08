@@ -77,11 +77,10 @@ Note: You only need to edit the values for collectors that you wish to configure
     
 To start:
 
-If you added certs in Step 3, then run
 ```
 docker-compose up -d --build
 ```
-Otherwise, run 
+Otherwise, run after compiling
 ```
  docker-compose up -d 
 ```
