@@ -88,13 +88,51 @@ Parameters:
     Type: String
     NoEcho: true
 
-  AzureDevOpsProjectId:
-    Description: Azure DevOps project id
+  AzureDevOpsProject:
+    Description: Azure DevOps project
     Type: String
 
   AzureDevOpsOrganizationName:
     Description: Azure DevOps organization name
     Type: String
+
+  JenkinsProtocol:
+    Description: Jenkins Protocol
+    Type: String
+    Default: http
+    AllowedValues:
+      [
+        http,
+        https,
+      ]
+
+  JenkinsServer:
+    Description: Jenkins Server domain without protocol
+    Type: String
+    Default: "jenkins:8080/"
+
+  JenkinsUser:
+    Description: Jenkins user
+    Type: String
+
+  JenkinsPassword:
+    Description: Jenkins Password
+    Type: String
+    NoEcho: true
+
+  SonarqubeServer:
+    Description: Sonarqube Server
+    Type: String
+    Default: "http://sonarqube:9000"
+
+  SonarqubeUser:
+    Description: Sonarqube user
+    Type: String
+
+  SonarqubePassword:
+    Description: Sonarqube Password
+    Type: String
+    NoEcho: true
 
 ######################################## Resources ######################################
 
@@ -126,9 +164,21 @@ Resources:
           #!/bin/bash
           sudo su -
           export GITHUB_TOKEN=${GitHubToken}
-          export CMDB_TOKEN=${AzureDevOpsToken}
-          export CMDB_PROJECTID=${AzureDevOpsProjectId}
-          export CMDB_ORGANIZATIONNAME=${AzureDevOpsOrganizationName}
+          export AZ_TOKEN=${AzureDevOpsToken}
+          export AZ_PROJECT=${AzureDevOpsProject}
+          export AZ_ORGANIZATION_NAME=${AzureDevOpsOrganizationName}
+          export JENKINS_USER=${JenkinsUser}
+          export JENKINS_PASSWORD=${JenkinsPassword}
+          export SONAR_SERVER=${SonarqubeServer}
+          export SONAR_USER=${SonarqubeUser}
+          export SONAR_PASSWORD=${SonarqubePassword}
+
+          if [ -z "$JENKINS_USER" && -z $JENKINS_PASSWORD ]
+          then
+              export JENKINS_SERVER=${JenkinsProtocol}://${JenkinsServer}
+          else
+              export JENKINS_SERVER=${JenkinsProtocol}://${JenkinsUser}:${JenkinsPassword}@${JenkinsServer}
+          fi
 
           sysctl -w vm.max_map_count=262144
           sysctl -w fs.file-max=65536
@@ -152,9 +202,13 @@ Resources:
           mvn -f /hygieia/ExecDashboard/pom.xml clean install package
           mvn -f /hygieia/hygieia-cmdb-company-collector/pom.xml clean install package  
           echo "GITHUB_TOKEN=$GITHUB_TOKEN
-          CMDB_TOKEN=$CMDB_TOKEN
-          CMDB_PROJECTID=$CMDB_PROJECTID
-          CMDB_ORGANIZATIONNAME=$CMDB_ORGANIZATIONNAME" >> /hygieia/.env
+          JENKINS_SERVER=$JENKINS_SERVER
+          SONAR_SERVER=$SONAR_SERVER
+          SONAR_USER=$SONAR_USER
+          SONAR_PASSWORD=$SONAR_PASSWORD
+          AZ_TOKEN=$AZ_TOKEN
+          AZ_PROJECT=$AZ_PROJECT
+          AZ_ORGANIZATION_NAME=$AZ_ORGANIZATION_NAME" >> /hygieia/.env
           cd /hygieia && docker-compose up -d --build
           # Start cfn-signal to the wait condition
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource WaitCondition --region ${AWS::Region}

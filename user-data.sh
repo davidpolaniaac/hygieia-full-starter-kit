@@ -23,7 +23,11 @@ git clone --recursive https://github.com/davidpolaniaac/hygieia-full-starter-kit
 mvn -f /hygieia/ExecDashboard/pom.xml clean install package
 mvn -f /hygieia/hygieia-cmdb-company-collector/pom.xml clean install package
 echo "GITHUB_TOKEN=$GITHUB_TOKEN
-CMDB_TOKEN=$CMDB_TOKEN
-CMDB_PROJECTID=$CMDB_PROJECTID
-CMDB_ORGANIZATIONNAME=$CMDB_ORGANIZATIONNAME" >> /hygieia/.env
+JENKINS_SERVER=$JENKINS_SERVER
+SONAR_SERVER=$SONAR_SERVER
+SONAR_USER=$SONAR_USER
+SONAR_PASSWORD=$SONAR_PASSWORD
+AZ_TOKEN=$AZ_TOKEN
+AZ_PROJECT=$AZ_PROJECT
+AZ_ORGANIZATION_NAME=$AZ_ORGANIZATION_NAME" >> /hygieia/.env
 cd /hygieia && docker-compose up -d --build
