@@ -98,7 +98,7 @@ services:
       - db-setup
     environment:
       - CMDB_PERSONAL_ACCESS_TOKEN=${AZ_TOKEN}
-      - PROJECTID=${AZ_PROJECT}
+      - PROJECT=${AZ_PROJECT}
       - ORGANIZATIONNAME=${AZ_ORGANIZATION_NAME}
       - PUBLISHER=davidpolaniaac
     links:
